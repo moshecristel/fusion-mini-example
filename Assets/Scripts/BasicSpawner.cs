@@ -12,8 +12,6 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     
     private NetworkRunner _runner;
     private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
-
-    private bool _isStartedAsHost;
     
     private void OnGUI()
     {
@@ -21,13 +19,11 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         {
             if (GUI.Button(new Rect(30,30,400,80), "Host"))
             {
-                _isStartedAsHost = true;
                 StartGame(GameMode.Host);
             }
             
             if (GUI.Button(new Rect(30,110,400,80), "Client"))
             {
-                _isStartedAsHost = false;
                 StartGame(GameMode.Client);
             }
         }
@@ -74,6 +70,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
         Debug.Log($"Player {player} joined (spawning).  LocalPlayer={runner.LocalPlayer}, isServer={runner.IsServer}, isClient={runner.IsClient}");
+        
         Vector3 spawnPosition = new Vector3((player.RawEncoded%runner.Config.Simulation.DefaultPlayers)*3,1,0);
         NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
         _spawnedCharacters.Add(player, networkPlayerObject);
@@ -82,10 +79,11 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
     {
         Debug.Log($"Player {player} left.");
-        // Find and remove the players avatar
+        
         if (_spawnedCharacters.TryGetValue(player, out NetworkObject networkObject))
         {
             Debug.Log($"Despawning player {player}");
+            
             runner.Despawn(networkObject);
             _spawnedCharacters.Remove(player);
         }
@@ -100,11 +98,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         
     }
     public void OnDisconnectedFromServer(NetworkRunner runner) { }
-
-    public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token)
-    {
-        request.Accept();
-    }
+    public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token) {}
     public void OnConnectFailed(NetworkRunner runner, NetAddress remoteAddress, NetConnectFailedReason reason) { }
     public void OnUserSimulationMessage(NetworkRunner runner, SimulationMessagePtr message) { }
     public void OnSessionListUpdated(NetworkRunner runner, List<SessionInfo> sessionList) { }
